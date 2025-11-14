@@ -7,14 +7,14 @@
 close all; clear; clc;
 %% FASE 1 - CENTROIDE Y TRAYECTORIA EN SLICER
 % 1. Carga de información de archivos para uso en la App "Medical Image Labeler"
-filepath = '4.000000-Ax T1 MP SPGR-PRE GAD-85514';
+filepath = 'C:\Users\Daniela\Desktop\Robótica Médica\RoboticaMedica\Matlab\4.000000-Ax T1 MP SPGR-PRE GAD-85514';
 dataFolder = fullfile(filepath);
 
 % Extraer la información general de la imagen
 medVol = medicalVolume(dataFolder);
 
 % 2. Definición de Centro de Masa (centroide del tumor)
-load('groundTruthMed.mat')
+load('C:\Users\Daniela\Desktop\Robótica Médica\RoboticaMedica\Matlab\groundTruthMed.mat')
 
 % Obtención de Voxeles que conforman el volumen definido en la App
 % Obtenemos la tabla con la información de todas las "Lables" definidas en
@@ -72,7 +72,7 @@ centroid_voxels = [cent_i, cent_j, cent_k];
 % imágenes. para esto debemos realizar lo siguiente: 
 
 % 1. Leer las propiedades del set de imágenes original
-dicom_prop = dicominfo('4.000000-Ax T1 MP SPGR-PRE GAD-85514\1-001.dcm');
+dicom_prop = dicominfo('C:\Users\Daniela\Desktop\Robótica Médica\RoboticaMedica\Matlab\4.000000-Ax T1 MP SPGR-PRE GAD-85514\1-001.dcm');
 
 % Definición de Variables extrayendo información del Archivo DICOM para 
 % construir matriz de transformación
@@ -119,27 +119,27 @@ centroid_mm = [x_paciente, y_paciente, z_paciente];
 
 % 4.Gráfica 3D
 % Leer el archivo JSON
-dataTumor = jsondecode(fileread('Tumor.mrk.json'));
+dataTumor = jsondecode(fileread('C:\Users\Daniela\Desktop\Robótica Médica\Proyecto\Slicer\Tumor.mrk.json'));
 controlPointsTumor = dataTumor.markups(1).controlPoints;
 Tumor = cell2mat(arrayfun(@(p) p.position(:)', controlPointsTumor, 'UniformOutput', false));
 
-dataTrack1 = jsondecode(fileread('Track1.mrk.json'));
+dataTrack1 = jsondecode(fileread('C:\Users\Daniela\Desktop\Robótica Médica\Proyecto\Slicer\Track1.mrk.json'));
 controlPointsTrack1 = dataTrack1.markups(1).controlPoints;
 pt1_tray = cell2mat(arrayfun(@(p) p.position(:)', controlPointsTrack1, 'UniformOutput', false));
 
-dataTrack2 = jsondecode(fileread('Track2.mrk.json'));
+dataTrack2 = jsondecode(fileread('C:\Users\Daniela\Desktop\Robótica Médica\Proyecto\Slicer\Track2.mrk.json'));
 controlPointsTrack2 = dataTrack2.markups(1).controlPoints;
 pt2_tray = cell2mat(arrayfun(@(p) p.position(:)', controlPointsTrack2, 'UniformOutput', false));
 
-dataTrack3 = jsondecode(fileread('Track3.mrk.json'));
+dataTrack3 = jsondecode(fileread('C:\Users\Daniela\Desktop\Robótica Médica\Proyecto\Slicer\Track3.mrk.json'));
 controlPointsTrack3 = dataTrack3.markups(1).controlPoints;
 pt3_tray = cell2mat(arrayfun(@(p) p.position(:)', controlPointsTrack3, 'UniformOutput', false));
 
-dataTrack4 = jsondecode(fileread('Track4.mrk.json'));
+dataTrack4 = jsondecode(fileread('C:\Users\Daniela\Desktop\Robótica Médica\Proyecto\Slicer\Track4.mrk.json'));
 controlPointsTrack4 = dataTrack4.markups(1).controlPoints;
 pt4_tray = cell2mat(arrayfun(@(p) p.position(:)', controlPointsTrack4, 'UniformOutput', false));
 
-dataTrack5 = jsondecode(fileread('Track5.mrk.json'));
+dataTrack5 = jsondecode(fileread('C:\Users\Daniela\Desktop\Robótica Médica\Proyecto\Slicer\Track5.mrk.json'));
 controlPointsTrack5 = dataTrack5.markups(1).controlPoints;
 pt5_tray = cell2mat(arrayfun(@(p) p.position(:)', controlPointsTrack5, 'UniformOutput', false));
 
@@ -158,7 +158,7 @@ legend('Trayectoria', 'Tumor');
 
 %% FASE 2 - MAPEO DE TC Y MOCAP
 % 1. Importe como Numeric Matriz una fila del archivo CSV
-load("data.mat"); % cargue aquí el archivo .mat de los datos importados
+load("C:\Users\Daniela\Desktop\Robótica Médica\Proyecto\Matlab\data.mat"); % cargue aquí el archivo .mat de los datos importados
 
 % Hacer un reshape de la data para que cada fila corresponda a las
 % coordenadas (x,y,z) de los markers.
@@ -196,16 +196,16 @@ title('Markers - Proyecto');
 grid on; axis vis3d; 
 
 % 2. Importe los puntos de 3D Slicer en formato json
-json1 = jsondecode(fileread('Marker1.mrk.json'));
+json1 = jsondecode(fileread('C:\Users\Daniela\Desktop\Robótica Médica\Laboratorio\Lab10\Marker1.mrk.json'));
 controlPointsjson1 = json1.markups(1).controlPoints;
 
-json2 = jsondecode(fileread('Marker2.mrk.json'));
+json2 = jsondecode(fileread('C:\Users\Daniela\Desktop\Robótica Médica\Laboratorio\Lab10\Marker2.mrk.json'));
 controlPointsjson2 = json2.markups(1).controlPoints;
 
-json3 = jsondecode(fileread('Marker3.mrk.json'));
+json3 = jsondecode(fileread('C:\Users\Daniela\Desktop\Robótica Médica\Laboratorio\Lab10\Marker3.mrk.json'));
 controlPointsjson3 = json3.markups(1).controlPoints;
 
-json4 = jsondecode(fileread('Marker4.mrk.json'));
+json4 = jsondecode(fileread('C:\Users\Daniela\Desktop\Robótica Médica\Laboratorio\Lab10\Marker4.mrk.json'));
 controlPointsjson4 = json4.markups(1).controlPoints;
 
 % Realice la correspondencia de los puntos

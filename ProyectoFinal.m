@@ -376,7 +376,9 @@ panda.base = transl( head_center_big(1)-0.8, ...
                      head_center_big(2)-0.1, ...
                      head_center_big(3)-0.5 );
 
-panda.tool = transl(0,0,0.10) * trotx(pi);
+% Herramienta tipo aguja
+panda.tool = transl(0,0,0.15) * trotx(pi);
+
 figure(8); clf; hold on; grid on; axis equal; axis vis3d;
 plot_sphere(head_center_big, radio_cabeza, 'b', 0.35);
 plot_sphere(puntoTumor_big', radio_tumor, 'r', 1.0);
@@ -385,4 +387,35 @@ panda.plot(q0, 'nojoints','noname','workspace',[-6 -3.5 -2.5 -0.5 0 1.8],'view',
 xlabel('X'); ylabel('Y'); zlabel('Z');
 xlim([-6 -3.5]); ylim([-2.5 -0.5]); zlim([0 1.8]);
 title('Robot Panda, Cabeza, Tumor y Trayectoria');
+hold off;
+
+%% Fase 5 - Ejecución del procedimiento mediante cinemática inversa
+T0 = panda.fkine(q0).T; 
+T1 = transl(Tray_big(5,:));
+T2 = transl(Tray_big(4,:));
+T3 = transl(Tray_big(3,:));
+T4 = transl(Tray_big(2,:));
+T5 = transl(Tray_big(1,:));
+
+Ts0 = ctraj(T0, T1, 60);
+Ts1 = ctraj(T1, T2, 50); 
+Ts2 = ctraj(T2, T3, 50);
+Ts3 = ctraj(T3, T4, 50);
+Ts4 = ctraj(T4, T5, 50);
+
+Q_0  = panda.ikine(Ts0, 'mask',[1 1 1 0 0 0], 'q0', q0);
+Q_1 = panda.ikine(Ts1, 'mask', [1 1 1 0 0 0], 'q0', Q_0(end,:)); % Trayectorias
+Q_2 = panda.ikine(Ts2, 'mask', [1 1 1 0 0 0], 'q0', Q_1(end,:));
+Q_3 = panda.ikine(Ts3, 'mask', [1 1 1 0 0 0], 'q0', Q_2(end,:));
+Q_4 = panda.ikine(Ts4, 'mask', [1 1 1 0 0 0], 'q0', Q_3(end,:));
+
+Q = [Q_0; Q_1; Q_2; Q_3; Q_4]; % Concatenar Trayectorias
+
+figure(9); clf; hold on; grid on; axis equal; axis vis3d;
+plot_sphere(head_center_big, radio_cabeza, 'b', 0.35);
+plot_sphere(puntoTumor_big', radio_tumor, 'r', 1.0);
+xlim([-6 -3.5]); ylim([-2.5 -0.5]); zlim([0 1.8]);
+xlabel('X'); ylabel('Y'); zlabel('Z');
+title('Ejecución del Procedimiento');
+panda.plot(Q, 'zoom', 1.5, 'delay', 0.05, 'nojoints','noname','workspace',[-6 -3.5 -2.5 -0.5 0 1.8],'view',[45 25]);
 hold off;

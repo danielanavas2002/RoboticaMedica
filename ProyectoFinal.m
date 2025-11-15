@@ -334,8 +334,6 @@ grid on; axis equal;
 axis vis3d; view(45, 25);
 hold off;
 %% Fase 3 - Visualización de la cabeza y patología mediante la Robotics Toolbox 
-% Centro aproximado de la cabeza: promedio de los 4 markers y
-% desplazamiento
 head_center = mean(data, 2) - [40; 0; 0];   
 
 % Convertir mm → m
@@ -344,264 +342,69 @@ puntoTumor_trans_m = puntoTumor_trans / 1000;
 Tray_trans_m = Tray_trans / 1000;
 data_trans_m = data_trans / 1000;       
 puntos_mocap_m = puntos_mocap / 1000;   
+escala = 3;
 
-figure(7); clf;
-hold on; grid on; axis equal; axis vis3d;
+head_center_scaled = head_center_m * escala;
+puntoTumor_scaled  = puntoTumor_trans_m * escala;
+Tray_scaled        = Tray_trans_m * escala;
 
-% Esfera grande para la cabeza 
-plot_sphere(head_center_m, 0.08, 'b', 0.3);  
+radio_cabeza = 0.13 * escala;
+radio_tumor  = 0.01 * escala;
+tam_mesa     = 0.25 * escala;
+altura_mesa  = head_center_scaled(3) - radio_cabeza - 0.05;
 
-% Esfera pequeña para el tumor
-plot_sphere(puntoTumor_trans_m', 0.01, 'r', 1.0);
+[Xm,Ym] = meshgrid(-tam_mesa:0.02*escala:tam_mesa);
+Zm = ones(size(Xm))*altura_mesa;
 
-% Trayectoria como línea
-plot3(Tray_trans_m(:,1), Tray_trans_m(:,2), Tray_trans_m(:,3), '-og', 'LineWidth', 1.5);
+figure(7); clf; hold on; grid on; axis equal; axis vis3d;
 
-xlabel('X (MoCap)');
-ylabel('Y (MoCap)');
-zlabel('Z (MoCap)');
-title('Cabeza simulada, tumor y trayectoria en sistema MoCap');
-legend({'Cabeza','Tumor','Trayectoria'}, 'Location','best');
-view(45, 25);
+surf(Xm, Ym, Zm,'FaceColor',[0.8 0.8 0.8],'EdgeColor','none','FaceAlpha',0.35);
+
+plot_sphere(head_center_scaled, radio_cabeza, 'b', 0.25);
+plot_sphere(puntoTumor_scaled', radio_tumor, 'r', 1.0);
+plot3(Tray_scaled(:,1),Tray_scaled(:,2),Tray_scaled(:,3),'-og','LineWidth',2);
+
+xlabel('X'); ylabel('Y'); zlabel('Z');
+title('Escena completa escalada (escala = 3)');
+xlim([head_center_scaled(1)-1*escala, head_center_scaled(1)+1*escala]);
+ylim([head_center_scaled(2)-1*escala, head_center_scaled(2)+1*escala]);
+zlim([altura_mesa-0.2*escala, head_center_scaled(3)+0.6*escala]);
+
 hold off;
 
-%% Fase 4 - Instalación del manipulador serial dentro de la simulación
+%% Fase 4 — Instalación del manipulador serial dentro de la simulación
+mdl_panda
+q0 = zeros(1,7);
 
+offset_base = [
+    head_center_scaled(1) - 0.35*escala
+    head_center_scaled(2) - 0.20*escala
+    altura_mesa
+];
+panda.base = transl(offset_base);
+panda.tool = transl(0,0,0.10*escala) * trotx(pi);
 
-% Cargar modelo cinemático UR5 (Robotics Toolbox de Corke)
-mdl_ur5      % crea el objeto 'ur5' en el workspace
-q0 = zeros(1, 6);   % UR5 tiene 6 DOF
-
-% Ajustar base del UR5 para que la cabeza quede en su espacio de trabajo
-% (ajusta estos valores viendo la figura)
-offset_base = [head_center(1) - 0.4, ...   % desplazar en X
-               head_center(2) - 0.2, ...   % desplazar en Y
-               head_center(3) - 0.2];      % desplazar en Z
-
-ur5.base = transl(offset_base);   % solo traslación por ahora
-
-% Definir herramienta (aguja de ~15 cm apuntando en -Z del efector)
-ur5.tool = transl(0, 0, 0.15) * trotx(pi);
-
-% Visualizar robot + cabeza + tumor
 figure(8); clf; hold on; grid on; axis equal; axis vis3d;
-plot_sphere(head_center, 0.08, 'b', 0.3);
-plot_sphere(puntoTumor_trans', 0.01, 'r', 1.0);
-plot3(Tray_trans(:,1), Tray_trans(:,2), Tray_trans(:,3), '-og', 'LineWidth', 1.5);
 
-ur5.plot(q0, 'workspace', [ -1 1 -1 1 0 1 ], 'view', [45 25]);
-title('UR5, cabeza y trayectoria en sistema MoCap');
+surf(Xm, Ym, Zm,'FaceColor',[0.8 0.8 0.8],'EdgeColor','none','FaceAlpha',0.35);
+
+plot_sphere(head_center_scaled, radio_cabeza, 'b', 0.25);
+plot_sphere(puntoTumor_scaled', radio_tumor, 'r', 1.0);
+plot3(Tray_scaled(:,1),Tray_scaled(:,2),Tray_scaled(:,3),'-og','LineWidth',2);
+
+panda.plot(q0,'view',[45 25],'nojoints','noname');
+
+xlim([head_center_scaled(1)-1*escala, head_center_scaled(1)+1*escala]);
+ylim([head_center_scaled(2)-1*escala, head_center_scaled(2)+1*escala]);
+zlim([altura_mesa-0.2*escala, head_center_scaled(3)+0.6*escala]);
+
+title('Robot Panda con mundo escalado');
 xlabel('X'); ylabel('Y'); zlabel('Z');
 hold off;
+%% Fase 5 — Movimiento del robot solo siguiendo la trayectoria verde
 
-%% Fase 5 - Ejecución del procedimiento mediante cinemática inversa
+%% Fase 3
 
+%% Fase 4
 
-   
-
-% Se carga el modelo cinemático del robot. El robot UR5 se encuentra dentro
-% de los modelos contenidos por defecto en la Robotics Toolbox
-mdl_ur5
-
-% El modelo aparece como ur5 en el workspace y también crea dos 
-% configuraciones básicas qr y qv
-q0 = zeros(1, 7);
-
-%% 2. Mapear centride del Tumor y pasos de la trayectoria a posición en
-% MoCap
-
-% Agregar un 1 a cada punto (para convertir a coordenadas homogéneas)
-puntoTumor_h = [Tumor 1]';
-
-puntoTray1_h = [pt1_tray 1]';
-puntoTray2_h = [pt2_tray 1]';
-puntoTray3_h = [pt3_tray 1]';
-puntoTray4_h = [pt4_tray 1]';
-puntoTray5_h = [pt5_tray 1]';
-
-% aplique la matriz a cada uno de los puntos de 3D slicer
-puntoTumor_trans_h = mocapT_slicer * puntoTumor_h;
-puntoTray1_trans_h = mocapT_slicer * puntoTray1_h;
-puntoTray2_trans_h = mocapT_slicer * puntoTray2_h;
-puntoTray3_trans_h = mocapT_slicer * puntoTray3_h;
-puntoTray4_trans_h = mocapT_slicer * puntoTray4_h;
-puntoTray5_trans_h = mocapT_slicer * puntoTray5_h;
-
-% Quitar el 1 (regresar a coordenadas cartesianas)
-puntoTumor_trans = puntoTumor_trans_h(1:3)';
-puntoTray1_trans = puntoTray1_trans_h(1:3)';
-puntoTray2_trans = puntoTray2_trans_h(1:3)';
-puntoTray3_trans = puntoTray3_trans_h(1:3)';
-puntoTray4_trans = puntoTray4_trans_h(1:3)';
-puntoTray5_trans = puntoTray5_trans_h(1:3)';
-
-Tray_trans = [puntoTray1_trans; puntoTray2_trans; puntoTray3_trans; puntoTray4_trans; puntoTray5_trans]; % agrupe en un vector la data final
-
-figure(6);
-hold on;
-scatter3(puntos_mocap(:,1), puntos_mocap(:,2), puntos_mocap(:,3), 100, 'o', 'MarkerEdgeColor', [0.4940 0.1840 0.5560], 'LineWidth', 1.5);
-scatter3(data_trans(:,1), data_trans(:,2), data_trans(:,3), 40, 'filled', 'MarkerFaceColor', [0.3010 0.7450 0.9330]);
-% scatter3(Tray_trans(:,1), Tray_trans(:,2), Tray_trans(:,3), 40, 'filled', 'MarkerFaceColor', [0.4660 0.6740 0.1880]);
-plot3(Tray_trans(:,1), Tray_trans(:,2), Tray_trans(:,3), '-o', 'Color', [0.4660 0.6740 0.1880], 'LineWidth', 1.5);
-scatter3(puntoTumor_trans(1,1), puntoTumor_trans(1,2), puntoTumor_trans(1,3), 40, 'filled', 'MarkerFaceColor', [0.6350 0.0780 0.1840]);
-legend({'MOCAP (Referencia)', 'Slicer Transformado', 'Trayectoria', 'Centroide Tumor'}, 'Location','best');
-xlabel('X'); ylabel('Y'); zlabel('Z');
-title('Mapeo de Trayectoria y Centoide Tumor a MoCap');
-grid on; axis equal; 
-axis vis3d; view(45,25);
-hold off;
-%%
-
-
-%% Inciso 3
-obs1 = [0.7; 0.25; 0.9];
-obs2 = [0.3; -0.25; 0.9];
-figure('units', 'normalized', 'outerposition', [0 0 1 1]);
-plot_sphere(pos1, 0.05, 'b');
-plot_sphere(pos2, 0.05, 'b');
-plot_sphere(obs1, 0.05, 'r');
-plot_sphere(obs2, 0.05, 'r');
-
-via1_3 = [0.7; 0.15; 0.5]; % Definir via  
-
-Tvia1_3 = transl(via1_3); % Convertir en transformaciones homogeneas 
-
-Ts1_3 = ctraj(T1, Tvia1_3, 100);   % tramo 1
-Ts2_3 = ctraj(Tvia1_3, T2 * troty(90), 100);   % tramo 2
-TsT_3 = cat(3, Ts1_3, Ts2_3);  % concatenar trayectorias
-
-Q2 = panda.ikine(TsT_3, 'mask', [1 1 1 0 1 0]);
-
-panda.plot(Q2, 'zoom', 1.5, 'delay', 0.05);
-
-%% Inciso 4 
-head = [0.8; 0.8; 0.2];
-pos3 = [0.5; 0.5; 0.5];
-figure('units', 'normalized', 'outerposition', [0 0 1 1]);
-plot_sphere(head, 0.5, 'r', 0.5);
-plot_sphere(pos3, 0.05, 'g');
-hold on;
-Td1 = transl(0.5, 0.5, 0.5) * trotx(-135) * trotz(-45);
-Td2 = Td1 * transl(0 , 0, 0.2);
-trplot(Td1, 'frame', 'A', 'color', 'g');
-trplot(Td2, 'frame', 'B', 'color', 'c');
-hold off;
-
-T0_4 = panda.fkine(q0).T; % Extraer matriz homogenea para iniciar traslación                 
-
-Ts1_4 = ctraj(T0_4, Td1, 100);
-Ts2_4 = ctraj(Td1, Td2, 100);
-
-Q3_1 = panda.ikine(Ts1_4, 'mask', [1 1 1 0 0 0], 'q0', q0);             
-Q3_2 = panda.ikine(Ts2_4, 'mask', [1 1 1 0 0 0], 'q0', Q3_1(end,:));   
-
-Q3 = [Q3_1; Q3_2]; % Concatenar Trayectorias
-
-panda.plot(Q3, 'zoom', 1.5, 'delay', 0.05);
-%% Inciso 5
-pos1_5 = [0; 0.5; 0.3]; % Definir puntos de Trayectorias
-pos2_5 = [0; 0.5; 1.1];
-pos3_5 = [0.2; 0.5; 1.08];
-pos4_5 = [0.3; 0.5; 0.99]; 
-pos5_5 = [0.38; 0.5; 0.9];
-pos6_5 = [0.4; 0.5; 0.8];
-pos7_5 = [0.41; 0.5; 0.7];
-pos8_5 = [0.4; 0.5; 0.6];
-pos9_5 = [0.38; 0.5; 0.5];
-pos10_5 = [0.3; 0.5; 0.4];
-pos11_5 = [0.3; 0.5; 0.4];
-
-T1_5 = transl(pos1_5); % Convetir a matricez homogeneas 
-T2_5 = transl(pos2_5);
-T3_5 = transl(pos3_5);
-T4_5 = transl(pos4_5);
-T5_5 = transl(pos5_5);
-T6_5 = transl(pos6_5);
-T7_5 = transl(pos7_5);
-T8_5 = transl(pos8_5);
-T9_5 = transl(pos9_5);
-T10_5 = transl(pos10_5);
-T11_5 = transl(pos11_5);
-
-Ts1_5 = ctraj(T1_5, T2_5, 100); % Tramos del Recorrido
-Ts2_5 = ctraj(T2_5, T3_5, 50);
-Ts3_5 = ctraj(T3_5, T4_5, 50);
-Ts4_5 = ctraj(T4_5, T5_5, 50);
-Ts5_5 = ctraj(T5_5, T6_5, 50);
-Ts6_5 = ctraj(T6_5, T7_5, 50);
-Ts7_5 = ctraj(T7_5, T8_5, 50);
-Ts8_5 = ctraj(T8_5, T9_5, 50);
-Ts9_5 = ctraj(T9_5, T10_5, 50);
-Ts10_5 = ctraj(T10_5, T11_5, 50);
-Ts11_5 = ctraj(T11_5, T1_5, 50);
-
-Q4_1 = panda.ikine(Ts1_5, 'mask', [1 1 1 0 0 0], 'q0', q0); % Trayectorias
-Q4_2 = panda.ikine(Ts2_5, 'mask', [1 1 1 0 0 0], 'q0', Q4_1(end,:));
-Q4_3 = panda.ikine(Ts3_5, 'mask', [1 1 1 0 0 0], 'q0', Q4_2(end,:));
-Q4_4 = panda.ikine(Ts4_5, 'mask', [1 1 1 0 0 0], 'q0', Q4_3(end,:));
-Q4_5 = panda.ikine(Ts5_5, 'mask', [1 1 1 0 0 0], 'q0', Q4_4(end,:));
-Q4_6 = panda.ikine(Ts6_5, 'mask', [1 1 1 0 0 0], 'q0', Q4_5(end,:));
-Q4_7 = panda.ikine(Ts7_5, 'mask', [1 1 1 0 0 0], 'q0', Q4_6(end,:));
-Q4_8 = panda.ikine(Ts8_5, 'mask', [1 1 1 0 0 0], 'q0', Q4_7(end,:));
-Q4_9 = panda.ikine(Ts9_5, 'mask', [1 1 1 0 0 0], 'q0', Q4_8(end,:));
-Q4_10 = panda.ikine(Ts10_5, 'mask', [1 1 1 0 0 0], 'q0', Q4_9(end,:));
-Q4_11 = panda.ikine(Ts11_5, 'mask', [1 1 1 0 0 0], 'q0', Q4_10(end,:));
-
-Q4 = [Q4_1; Q4_2; Q4_3; Q4_4; Q4_5; Q4_6; Q4_7; Q4_8; Q4_9; Q4_10; Q4_11]; % Concatenar Trayectorias
-
-figure; % Figura
-panda.plot(Q4, 'zoom', 1.5, 'delay', 0.005);
-view(0, 10); % Ajustar vista
-
-traj = []; % Vector para extraer puntos del recorrido
-for i = 1:size(Ts1_5,3)
-    traj = [traj; transl(Ts1_5(:,:,i))'];
-end
-for i = 1:size(Ts2_5,3)
-    traj = [traj; transl(Ts2_5(:,:,i))'];
-end
-for i = 1:size(Ts3_5,3)
-    traj = [traj; transl(Ts3_5(:,:,i))'];
-end
-for i = 1:size(Ts4_5,3)
-    traj = [traj; transl(Ts4_5(:,:,i))'];
-end
-for i = 1:size(Ts5_5,3)
-    traj = [traj; transl(Ts5_5(:,:,i))'];
-end
-for i = 1:size(Ts6_5,3)
-    traj = [traj; transl(Ts6_5(:,:,i))'];
-end
-for i = 1:size(Ts7_5,3)
-    traj = [traj; transl(Ts7_5(:,:,i))'];
-end
-for i = 1:size(Ts8_5,3)
-    traj = [traj; transl(Ts8_5(:,:,i))'];
-end
-for i = 1:size(Ts9_5,3)
-    traj = [traj; transl(Ts9_5(:,:,i))'];
-end
-for i = 1:size(Ts10_5,3)
-    traj = [traj; transl(Ts10_5(:,:,i))'];
-end
-for i = 1:size(Ts11_5,3)
-    traj = [traj; transl(Ts11_5(:,:,i))'];
-end
-
-hold on; % Graficar puntos
-plot3(traj(:,1), traj(:,2), traj(:,3), 'b-', 'LineWidth', 2);
-grid on; axis equal;
-xlabel('X'); ylabel('Y'); zlabel('Z');
-
-
-
-
-
-
-
-
-
-
-
-
-%% FASE 4 - EJECUTAR TRAYECTORIA 
+%% Fase 5

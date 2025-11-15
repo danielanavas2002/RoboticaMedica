@@ -329,10 +329,21 @@ plot3(Tray_trans(:,1), Tray_trans(:,2), Tray_trans(:,3), '-o', 'Color', [0.4660 
 scatter3(puntoTumor_trans(1), puntoTumor_trans(2), puntoTumor_trans(3), 120, 'filled', 'MarkerFaceColor', [0.6350 0.0780 0.1840]);
 xlabel('X'); ylabel('Y'); zlabel('Z');
 title('Tumor y Trayectoria en Coordenadas del Sistema MoCap');
-legend({'MoCap (Referencia)', 'Markers Slicer', 'Trayectoria', 'Centroide Tumor'},'Location', 'best');
-grid on; axis equal; 
-axis vis3d; view(45, 25);
+legend({'MoCap (Referencia)','Markers Slicer Transformados', ...
+        'Trayectoria Transformada', ...
+        'Centroide del Tumor'}, ...
+        'Location', 'best');
+
+% Ajustes visuales
+grid on; 
+axis equal; 
+axis vis3d; 
+view(45, 25);
+
 hold off;
+
+
+
 %% Fase 3 - Visualización de la cabeza y patología mediante la Robotics Toolbox 
 
 %% Fase 4 - Instalación del manipulador serial dentro de la simulación

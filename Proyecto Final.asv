@@ -329,22 +329,40 @@ plot3(Tray_trans(:,1), Tray_trans(:,2), Tray_trans(:,3), '-o', 'Color', [0.4660 
 scatter3(puntoTumor_trans(1), puntoTumor_trans(2), puntoTumor_trans(3), 120, 'filled', 'MarkerFaceColor', [0.6350 0.0780 0.1840]);
 xlabel('X'); ylabel('Y'); zlabel('Z');
 title('Tumor y Trayectoria en Coordenadas del Sistema MoCap');
-legend({'MoCap (Referencia)','Markers Slicer Transformados', ...
-        'Trayectoria Transformada', ...
-        'Centroide del Tumor'}, ...
-        'Location', 'best');
-
-% Ajustes visuales
-grid on; 
-axis equal; 
-axis vis3d; 
-view(45, 25);
-
+legend({'MoCap (Referencia)', 'Markers Slicer', 'Trayectoria', 'Centroide Tumor'},'Location', 'best');
+grid on; axis equal; 
+axis vis3d; view(45, 25);
 hold off;
-
-
-
 %% Fase 3 - Visualización de la cabeza y patología mediante la Robotics Toolbox 
+% Centro aproximado de la cabeza: promedio de los 4 markers de la cabezota
+head_center = mean(data, 2) - [50; 0; 0];   
+
+% Convertir mm → m
+head_center = head_center / 1000;
+puntoTumor_trans = puntoTumor_trans / 1000;
+Tray_trans = Tray_trans / 1000;
+data_trans = data_trans / 1000;       % markers Slicer transformados
+puntos_mocap = puntos_mocap / 1000;   % markers MoCap
+
+figure(7); clf;
+hold on; grid on; axis equal; axis vis3d;
+
+% Esfera grande para la cabeza (radio ajustable)
+plot_sphere(head_center, 0.08, 'b', 0.3);  % (centro, radio, color, alpha)
+
+% Esfera pequeña para el tumor
+plot_sphere(puntoTumor_trans', 0.01, 'r', 1.0);
+
+% Trayectoria como línea
+plot3(Tray_trans(:,1), Tray_trans(:,2), Tray_trans(:,3), '-og', 'LineWidth', 1.5);
+
+xlabel('X (MoCap)');
+ylabel('Y (MoCap)');
+zlabel('Z (MoCap)');
+title('Cabeza simulada, tumor y trayectoria en sistema MoCap');
+legend({'Cabeza','Tumor','Trayectoria'}, 'Location','best');
+view(45, 25);
+hold off;
 
 %% Fase 4 - Instalación del manipulador serial dentro de la simulación
 

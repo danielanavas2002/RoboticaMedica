@@ -334,8 +334,65 @@ grid on; axis equal;
 axis vis3d; view(45, 25);
 hold off;
 %% Fase 3 - Visualización de la cabeza y patología mediante la Robotics Toolbox 
+% Centro aproximado de la cabeza: promedio de los 4 markers y
+% desplazamiento
+head_center = mean(data, 2) - [40; 0; 0];   
+
+% Convertir mm → m
+head_center_m = head_center / 1000;
+puntoTumor_trans_m = puntoTumor_trans / 1000;
+Tray_trans_m = Tray_trans / 1000;
+data_trans_m = data_trans / 1000;       
+puntos_mocap_m = puntos_mocap / 1000;   
+
+figure(7); clf;
+hold on; grid on; axis equal; axis vis3d;
+
+% Esfera grande para la cabeza 
+plot_sphere(head_center_m, 0.08, 'b', 0.3);  
+
+% Esfera pequeña para el tumor
+plot_sphere(puntoTumor_trans_m', 0.01, 'r', 1.0);
+
+% Trayectoria como línea
+plot3(Tray_trans_m(:,1), Tray_trans_m(:,2), Tray_trans_m(:,3), '-og', 'LineWidth', 1.5);
+
+xlabel('X (MoCap)');
+ylabel('Y (MoCap)');
+zlabel('Z (MoCap)');
+title('Cabeza simulada, tumor y trayectoria en sistema MoCap');
+legend({'Cabeza','Tumor','Trayectoria'}, 'Location','best');
+view(45, 25);
+hold off;
 
 %% Fase 4 - Instalación del manipulador serial dentro de la simulación
+
+
+% Cargar modelo cinemático UR5 (Robotics Toolbox de Corke)
+mdl_ur5      % crea el objeto 'ur5' en el workspace
+q0 = zeros(1, 6);   % UR5 tiene 6 DOF
+
+% Ajustar base del UR5 para que la cabeza quede en su espacio de trabajo
+% (ajusta estos valores viendo la figura)
+offset_base = [head_center(1) - 0.4, ...   % desplazar en X
+               head_center(2) - 0.2, ...   % desplazar en Y
+               head_center(3) - 0.2];      % desplazar en Z
+
+ur5.base = transl(offset_base);   % solo traslación por ahora
+
+% Definir herramienta (aguja de ~15 cm apuntando en -Z del efector)
+ur5.tool = transl(0, 0, 0.15) * trotx(pi);
+
+% Visualizar robot + cabeza + tumor
+figure(8); clf; hold on; grid on; axis equal; axis vis3d;
+plot_sphere(head_center, 0.08, 'b', 0.3);
+plot_sphere(puntoTumor_trans', 0.01, 'r', 1.0);
+plot3(Tray_trans(:,1), Tray_trans(:,2), Tray_trans(:,3), '-og', 'LineWidth', 1.5);
+
+ur5.plot(q0, 'workspace', [ -1 1 -1 1 0 1 ], 'view', [45 25]);
+title('UR5, cabeza y trayectoria en sistema MoCap');
+xlabel('X'); ylabel('Y'); zlabel('Z');
+hold off;
 
 %% Fase 5 - Ejecución del procedimiento mediante cinemática inversa
 

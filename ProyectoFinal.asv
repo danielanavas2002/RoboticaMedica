@@ -334,7 +334,6 @@ grid on; axis equal;
 axis vis3d; view(45, 25);
 hold off;
 %% Fase 3 - Visualización de la cabeza y patología mediante la Robotics Toolbox 
-% head_center = mean(data, 2) - [40; 0; 0];   
 head_center = mean(data, 2);   
 
 head_center_m = head_center / 1000;
@@ -343,88 +342,164 @@ Tray_trans_m = Tray_trans / 1000;
 data_trans_m = data_trans / 1000;       
 puntos_mocap_m = puntos_mocap / 1000;   
 
-figure('units', 'normalized', 'outerposition', [0 0 1 1]);
-hold on; 
-plot_sphere(head_center_m, 0.5, 'b', 0.2); % transparencia 0.2
-% plot_sphere(puntoTumor_trans_m, 0.05, 'r');
-plot3(Tray_trans_m(:,1),Tray_trans_m(:,2),Tray_trans_m(:,3), '-og','LineWidth',2);
-axis equal; xlabel('X'); ylabel('Y'); zlabel('Z');      
+figure('units','normalized','outerposition',[0 0 1 1]);
+hold on;
+view(3);
 grid on;
-view(3);       
-
-
-%%
-head_center = mean(data, 2) - [40; 0; 0];   
-
-% Convertir mm → m
-head_center_m = head_center / 1000;
-puntoTumor_trans_m = puntoTumor_trans / 1000;
-Tray_trans_m = Tray_trans / 1000;
-data_trans_m = data_trans / 1000;       
-puntos_mocap_m = puntos_mocap / 1000;   
-escala = 3;
-
-head_center_scaled = head_center_m * escala;
-puntoTumor_scaled  = puntoTumor_trans_m * escala;
-Tray_scaled        = Tray_trans_m * escala;
-
-radio_cabeza = 0.13 * escala;
-radio_tumor  = 0.01 * escala;
-tam_mesa     = 0.25 * escala;
-altura_mesa  = head_center_scaled(3) - radio_cabeza - 0.05;
-
-[Xm,Ym] = meshgrid(-tam_mesa:0.02*escala:tam_mesa);
-Zm = ones(size(Xm))*altura_mesa;
-
-figure(7); clf; hold on; grid on; axis equal; axis vis3d;
-
-surf(Xm, Ym, Zm,'FaceColor',[0.8 0.8 0.8],'EdgeColor','none','FaceAlpha',0.35);
-
-plot_sphere(head_center_scaled, radio_cabeza, 'b', 0.25);
-plot_sphere(puntoTumor_scaled', radio_tumor, 'r', 1.0);
-plot3(Tray_scaled(:,1),Tray_scaled(:,2),Tray_scaled(:,3),'-og','LineWidth',2);
-
+axis equal;
+R_head = 0.105; 
+[XS,YS,ZS] = sphere(40);
+surf( XS*R_head + head_center_m(1), ...
+      YS*R_head + head_center_m(2), ...
+      ZS*R_head + head_center_m(3), ...
+      'FaceColor',[0.2 0.4 1], 'FaceAlpha',0.3, 'EdgeColor','none');
+R_tumor = 0.009; 
+surf( XS*R_tumor + puntoTumor_trans_m(1), ...
+      YS*R_tumor + puntoTumor_trans_m(2), ...
+      ZS*R_tumor + puntoTumor_trans_m(3), ...
+      'FaceColor',[0.8 0 0], 'FaceAlpha',1, 'EdgeColor','none');
+plot3(Tray_trans_m(:,1), ...
+      Tray_trans_m(:,2), ...
+      Tray_trans_m(:,3), ...
+      '-og', 'LineWidth', 2, 'MarkerSize', 8, ...
+      'MarkerFaceColor','g');
 xlabel('X'); ylabel('Y'); zlabel('Z');
-title('Escena completa escalada (escala = 3)');
-xlim([head_center_scaled(1)-1*escala, head_center_scaled(1)+1*escala]);
-ylim([head_center_scaled(2)-1*escala, head_center_scaled(2)+1*escala]);
-zlim([altura_mesa-0.2*escala, head_center_scaled(3)+0.6*escala]);
-
-hold off;
+title('Cabeza,Tumor y Trayectoria');
 
 %% Fase 4 — Instalación del manipulador serial dentro de la simulación
 mdl_panda
-q0 = zeros(1,7);
+q0 = zeros(1, 7);
 
-offset_base = [
-    head_center_scaled(1) - 0.35*escala
-    head_center_scaled(2) - 0.20*escala
-    altura_mesa
-];
-panda.base = transl(offset_base);
-panda.tool = transl(0,0,0.10*escala) * trotx(pi);
+panda.base = transl( head_center_m(1) + 0.40 , ...   
+                     head_center_m(2), ...           
+                     head_center_m(3) - 0.20 );      
 
-figure(8); clf; hold on; grid on; axis equal; axis vis3d;
+pos1 = [-1.1963; -0.4163; 0.2751];
+pos2 = [-1.1963; 0.4163; 0.2751];
+figure('units', 'normalized', 'outerposition', [0 0 1 1]);
+plot_sphere(pos1, 0.05, 'b');
+plot_sphere(pos2, 0.05, 'b');
 
-surf(Xm, Ym, Zm,'FaceColor',[0.8 0.8 0.8],'EdgeColor','none','FaceAlpha',0.35);
+T1 = transl(pos1);
+T2 = transl(pos2);
 
-plot_sphere(head_center_scaled, radio_cabeza, 'b', 0.25);
-plot_sphere(puntoTumor_scaled', radio_tumor, 'r', 1.0);
-plot3(Tray_scaled(:,1),Tray_scaled(:,2),Tray_scaled(:,3),'-og','LineWidth',2);
+Ts = ctraj(T1, T2, 100);
 
-panda.plot(q0,'view',[45 25],'nojoints','noname');
+Q1 = panda.ikine(Ts, 'mask', [1,1,1,0,0,0]); 
 
-xlim([head_center_scaled(1)-1*escala, head_center_scaled(1)+1*escala]);
-ylim([head_center_scaled(2)-1*escala, head_center_scaled(2)+1*escala]);
-zlim([altura_mesa-0.2*escala, head_center_scaled(3)+0.6*escala]);
+panda.plot(Q1, 'zoom', 1.5, 'delay', 0.05);
 
-title('Robot Panda con mundo escalado');
+%%
+mdl_panda
+q0 = zeros(1, 7);
+
+panda.base = transl( head_center_m(1) + 0.40 , ...   
+                     head_center_m(2), ...           
+                     head_center_m(3) - 0.20 ); 
+
+figure; hold on; grid on; axis equal; axis vis3d;
+
+panda.plot(q0, ...
+           'nojoints', 'noname', ...
+           'workspace', [-2 0 -2 0 0 3], ...
+           'view', [45 25]);
+
+% ----------- Graficar cabeza -------------
+R_head = 0.12; % 12 cm radio
+[XS,YS,ZS] = sphere(40);
+surf( XS*R_head + head_center_m(1), ...
+      YS*R_head + head_center_m(2), ...
+      ZS*R_head + head_center_m(3), ...
+      'FaceColor',[0.2 0.4 1], 'FaceAlpha',0.3, 'EdgeColor','none');
+
+% ----------- Graficar tumor --------------
+R_tumor = 0.009; % 2 cm
+surf( XS*R_tumor + puntoTumor_trans_m(1), ...
+      YS*R_tumor + puntoTumor_trans_m(2), ...
+      ZS*R_tumor + puntoTumor_trans_m(3), ...
+      'FaceColor',[0.8 0 0], 'FaceAlpha',1, 'EdgeColor','none');
+
+% ----------- Graficar trayectoria ---------
+plot3(Tray_trans_m(:,1), ...
+      Tray_trans_m(:,2), ...
+      Tray_trans_m(:,3), ...
+      '-og', 'LineWidth', 2, 'MarkerSize', 8, ...
+      'MarkerFaceColor','g');
+
 xlabel('X'); ylabel('Y'); zlabel('Z');
-hold off;
+title('Robot Panda + Cabeza + Tumor + Trayectoria');
+
+
+
 %% Fase 5 — Movimiento del robot solo siguiendo la trayectoria verde
 
-%% Fase 3
 
-%% Fase 4
+%%
 
-%% Fase 5
+%% Fase 3 - Visualización de la cabeza y patología mediante la Robotics Toolbox 
+% Se agrega un factor de escala para que la cabeza y el robot Panda sean
+% coincidentes en tamaño (El robot tiene dimensiones poco realistas) para 
+escala = 4;
+
+% Escalar puntos
+head_center_big = head_center_m * escala;
+puntoTumor_big  = puntoTumor_trans_m * escala;
+Tray_big        = Tray_trans_m * escala;
+
+% Radios estilo LAB
+radio_cabeza = 0.5;     % así era en el laboratorio
+radio_tumor  = 0.05;    % ajustado para que se vea bien
+tam_mesa     = 0.30*escala;
+
+figure(15); clf; hold on; grid on; axis equal; axis vis3d;
+
+% Graficar cabeza grande
+plot_sphere(head_center_big, radio_cabeza, 'b', 0.35);
+
+% Tumor redondo
+plot_sphere(puntoTumor_big', radio_tumor, 'r', 1.0);
+
+% Trayectoria verde
+plot3(Tray_big(:,1), Tray_big(:,2), Tray_big(:,3), '-og', ...
+      'LineWidth', 2, 'MarkerSize', 6);
+
+xlabel('X');
+ylabel('Y');
+zlabel('Z');
+title('Cabeza, Tumor y Trayectoria (escala estilo LAB)');
+
+% Ajuste de límites para centrado visual
+xlim([head_center_big(1)-1.2, head_center_big(1)+1.2]);
+ylim([head_center_big(2)-1.2, head_center_big(2)+1.2]);
+zlim([head_center_big(3)-0.3, head_center_big(3)+1.0]);
+
+view([45 25]);
+hold off;
+
+%% FASE 4 — Robot Panda + Cabeza grande + Trayectoria
+
+mdl_panda
+q0 = zeros(1,7);
+
+% Base del robot alineada a la cabeza escalada
+panda.base = transl( head_center_big(1)-0.6, ...
+                     head_center_big(2)-0.1, ...
+                     head_center_big(3)-0.5 );
+
+% Producto final (solo se ve bonito)
+panda.tool = transl(0,0,0.10) * trotx(pi);
+
+figure(16); clf; hold on; grid on; axis equal; axis vis3d;
+
+plot_sphere(head_center_big, radio_cabeza, 'b', 0.35);
+plot_sphere(puntoTumor_big', radio_tumor, 'r', 1.0);
+plot3(Tray_big(:,1), Tray_big(:,2), Tray_big(:,3), '-og', ...
+      'LineWidth', 2, 'MarkerSize', 6);
+
+% Graficar robot estático en q0
+panda.plot(q0, 'nojoints','noname','workspace',[-3 3 -3 3 -1 3], ...
+           'view',[45 25]);
+
+xlabel('X'); ylabel('Y'); zlabel('Z');
+title('Robot Panda + Cabeza + Tumor + Trayectoria (escala estilo LAB)');
+hold off;
